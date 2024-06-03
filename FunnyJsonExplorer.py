@@ -1,5 +1,5 @@
+import argparse
 from abc import ABC, abstractmethod
-
 
 # 定义节点的基类
 class Component(ABC):
@@ -81,13 +81,12 @@ class TreeDrawer(Drawer):
                 is_last = i == len(component.children) - 1
                 self._draw_tree(child, prefix, is_last)
 
-sroot = 1
+
 # 具体绘制器类，用于矩形绘制
 class RectangleDrawer(Drawer):
     def draw(self, root):
         width = self._calculate_width(root)
-        self._draw_rectangle(root, width,'',False,True)
-        sroot = root
+        self._draw_rectangle(root, width, '', False, True)
 
     def _calculate_width(self, component, level=0):
         max_width = len(component.icon + component.name) + 2
@@ -96,12 +95,12 @@ class RectangleDrawer(Drawer):
                 max_width = max(max_width, self._calculate_width(child, level + 1))
         return max_width + 10
 
-    def _draw_rectangle(self, component, width, prefix='', is_last = False ,is_first = False):
+    def _draw_rectangle(self, component, width, prefix='', is_last=False, is_first=False):
         line_end = '┐' if is_first else '┤'
         line_beg = '┌' if is_first else '|'
 
-        line_beg = '└' if (is_last and (not isinstance(component,Container) or len(component.children) == 0)) else line_beg
-        line_end = '┘' if (is_last and (not isinstance(component,Container) or len(component.children) == 0)) else line_end
+        line_beg = '└' if (is_last and (not isinstance(component, Container) or len(component.children) == 0)) else line_beg
+        line_end = '┘' if (is_last and (not isinstance(component, Container) or len(component.children) == 0)) else line_end
 
         if line_beg == '└':
             prefix = prefix.replace(' ', '─').replace('|', '─').replace('├', '┴')
@@ -109,18 +108,18 @@ class RectangleDrawer(Drawer):
             print(f"{line_beg}{prefix}─ {component.name}{component.icon} {'─' * (width - len(component.name) - 3 - len(prefix))}{line_end}")
         else:
             print(f"{line_beg}{prefix}─ {component.name}{component.icon} {'─' * (width - len(component.name) - 4 - len(prefix) - len(component.icon))}{line_end}")
-        if not isinstance(component,Container):
+        if not isinstance(component, Container):
             return
         for i, child in enumerate(component.children):
-           child_prefix = prefix + '  ├' if (prefix == '' or prefix[-1] != '├') else '  |' + prefix
-           if ((i == len(component.children) - 1) and component.name == "root"):
-               is_last = True
-           elif (i == len(component.children) - 1):
-               is_last = is_last
-           else:
+            child_prefix = prefix + '  ├' if (prefix == '' or prefix[-1] != '├') else '  |' + prefix
+            if (i == len(component.children) - 1) and component.name == "root":
+                is_last = True
+            elif i == len(component.children) - 1:
+                is_last = is_last
+            else:
                 is_last = False
 
-           self._draw_rectangle(child, width, child_prefix, is_last=is_last)
+            self._draw_rectangle(child, width, child_prefix, is_last=is_last)
 
 
 # 工厂方法类，用于创建绘制器
@@ -181,8 +180,13 @@ class FunnyJsonExplorer:
         self.drawer.draw(root)
 
 
-# 测试代码
-if __name__ == "__main__":
+# 主程序，解析命令行参数并执行相应操作
+def main():
+    parser = argparse.ArgumentParser(description="JSON Explorer with different drawing styles and icon sets.")
+    parser.add_argument('-d', '--drawer', choices=['tree', 'rectangle'], required=True, help='Choose the drawer type (tree or rectangle).')
+    parser.add_argument('-i', '--icon', choices=['poker', 'star'], required=True, help='Choose the icon set (poker or star).')
+    args = parser.parse_args()
+
     structure = {
         'oranges': {
             'mandarin': {
@@ -195,17 +199,19 @@ if __name__ == "__main__":
         }
     }
 
-    # 使用树形绘制和Poker Face图标族
-    tree_drawer_factory = TreeDrawerFactory()
-    poker_face_factory = PokerFaceFactory()
-    # 使用矩形绘制和Star图标族
-    rectangle_drawer_factory = RectangleDrawerFactory()
-    star_factory = StarFactory()
+    if args.drawer == 'tree':
+        drawer_factory = TreeDrawerFactory()
+    elif args.drawer == 'rectangle':
+        drawer_factory = RectangleDrawerFactory()
 
-    explorer = FunnyJsonExplorer(tree_drawer_factory, star_factory)
+    if args.icon == 'poker':
+        icon_factory = PokerFaceFactory()
+    elif args.icon == 'star':
+        icon_factory = StarFactory()
+
+    explorer = FunnyJsonExplorer(drawer_factory, icon_factory)
     explorer.show(structure)
-    print("\n")
 
 
-    explorer = FunnyJsonExplorer(rectangle_drawer_factory, star_factory)
-    explorer.show(structure)
+if __name__ == "__main__":
+    main()
